@@ -1,48 +1,20 @@
 FROM ubuntu:20.04
 
-ENV DEBIAN_FRONTEND=noninteractive
+# Install necessary packages
+RUN dpkg --add-architecture i386 && \
+    apt-get update && \
+    apt-get install -y wine64 wine32 wget xvfb
 
-# Install sudo and other necessary packages
-RUN apt-get update && apt-get install -y \
-    sudo \
-    software-properties-common \
-    wget \
-    apt-transport-https \
-    gnupg2 \
-    && rm -rf /var/lib/apt/lists/*
+# Download and install Roblox
+RUN wget -O roblox.exe "https://setup.rbxcdn.com/version-2.664.714-Roblox.exe" && \
+    xvfb-run wine roblox.exe /silent
 
-# Add i386 architecture
-RUN sudo dpkg --add-architecture i386
+# Create a user to run Roblox
+RUN useradd -m robloxuser
 
-# Download and add WineHQ key
-RUN wget -nc https://dl.winehq.org/wine-builds/winehq.key && \
-    sudo mkdir -p /etc/apt/keyrings && \
-    sudo mv winehq.key /etc/apt/keyrings/winehq-archive.key
-
-# Add WineHQ repository
-RUN echo "deb [signed-by=/etc/apt/keyrings/winehq-archive.key] https://dl.winehq.org/wine-builds/ubuntu/ focal main" | sudo tee /etc/apt/sources.list.d/winehq.list
-
-# Update package list and install Wine
-RUN sudo apt-get update && \
-    sudo apt-get install -y --install-recommends winehq-stable
-
-# Install Roblox dependencies
-RUN sudo apt-get install -y winetricks && rm -rf /var/lib/apt/lists/*
-
-# Create a user and switch to it
-RUN useradd -ms /bin/bash robloxuser
+# Switch to the new user
 USER robloxuser
 WORKDIR /home/robloxuser
 
-# Install Roblox using winetricks
-RUN winetricks -q roblox
-
-# Set environment variables for Wine
-ENV WINEPREFIX=/home/robloxuser/.wine
-ENV WINEARCH=win32
-
-# Copy and set permissions for entrypoint script
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN sudo chmod +x /usr/local/bin/entrypoint.sh
-
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# Entry point to start Roblox
+ENTRYPOINT ["xvfb-run", "wine", "C:\\Program Files (x86)\\Roblox\\Versions\\version-2.664.714\\RobloxPlayerLauncher.exe"]
