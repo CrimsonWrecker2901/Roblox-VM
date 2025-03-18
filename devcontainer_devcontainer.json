@@ -1,0 +1,10 @@
+{
+    "name": "Linux VM with Wine and Roblox",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+    },
+    "extensions": []
+}
