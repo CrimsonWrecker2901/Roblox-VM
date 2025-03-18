@@ -3,6 +3,10 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
+    "runArgs": [
+        "--privileged",
+        "--cap-add=ALL"
+    ],
     "settings": {
         "terminal.integrated.shell.linux": "/bin/bash"
     },
