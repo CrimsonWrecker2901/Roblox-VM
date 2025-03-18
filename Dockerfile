@@ -1,30 +1,33 @@
-# Use the official Ubuntu base image
 FROM ubuntu:20.04
 
-# Avoid interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update and install necessary packages
+# Install sudo and other necessary packages
 RUN apt-get update && apt-get install -y \
+    sudo \
     software-properties-common \
     wget \
     apt-transport-https \
     gnupg2 \
-    software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
-# Add Wine repository and key
-RUN dpkg --add-architecture i386 && \
-    wget -nc https://dl.winehq.org/wine-builds/winehq.key && \
-    apt-key add winehq.key && \
-    add-apt-repository 'deb https://dl.winehq.org/wine-builds/ubuntu/ focal main' && \
-    apt-get update && \
-    apt-get install -y --install-recommends winehq-stable
+# Add i386 architecture
+RUN sudo dpkg --add-architecture i386
+
+# Download and add WineHQ key
+RUN wget -nc https://dl.winehq.org/wine-builds/winehq.key && \
+    sudo mkdir -p /etc/apt/keyrings && \
+    sudo mv winehq.key /etc/apt/keyrings/winehq-archive.key
+
+# Add WineHQ repository
+RUN echo "deb [signed-by=/etc/apt/keyrings/winehq-archive.key] https://dl.winehq.org/wine-builds/ubuntu/ focal main" | sudo tee /etc/apt/sources.list.d/winehq.list
+
+# Update package list and install Wine
+RUN sudo apt-get update && \
+    sudo apt-get install -y --install-recommends winehq-stable
 
 # Install Roblox dependencies
-RUN apt-get install -y \
-    winetricks \
-    && rm -rf /var/lib/apt/lists/*
+RUN sudo apt-get install -y winetricks && rm -rf /var/lib/apt/lists/*
 
 # Create a user and switch to it
 RUN useradd -ms /bin/bash robloxuser
@@ -38,8 +41,8 @@ RUN winetricks -q roblox
 ENV WINEPREFIX=/home/robloxuser/.wine
 ENV WINEARCH=win32
 
-# Create an entrypoint script to start Roblox
+# Copy and set permissions for entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN sudo chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
